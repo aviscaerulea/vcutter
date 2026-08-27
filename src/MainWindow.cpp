@@ -1393,25 +1393,56 @@ bool MainWindow::eventFilter(QObject* watched, QEvent* event)
         changeVolume((ke->key() == Qt::Key_Up) ? kVolumeStep : -kVolumeStep);
         return true;
     }
-    case Qt::Key_Period:
+    case Qt::Key_Period: {
         // 再生速度 +0.05
+        // 実行中は修飾子の有無に関わらず消費する（↑↓ キーと同挙動）。
+        // 修飾子付き（Ctrl+. 等）はシステムショートカットと衝突するため素通しし、
+        // 冒頭コメントのシステムキー契約を守る（↑↓ キーと同型のガード）
         if (running) return true;
+        const auto mods = ke->modifiers() & kModifierMask;
+        if (mods != Qt::NoModifier) {
+            return QMainWindow::eventFilter(watched, event);
+        }
         changePlaybackRate(kPlaybackRateStep);
         return true;
-    case Qt::Key_Comma:
+    }
+    case Qt::Key_Comma: {
         // 再生速度 -0.05
+        // 実行中は修飾子の有無に関わらず消費する（↑↓ キーと同挙動）。
+        // 修飾子付き（Ctrl+, 等）はシステムショートカットと衝突するため素通しし、
+        // 冒頭コメントのシステムキー契約を守る（↑↓ キーと同型のガード）
         if (running) return true;
+        const auto mods = ke->modifiers() & kModifierMask;
+        if (mods != Qt::NoModifier) {
+            return QMainWindow::eventFilter(watched, event);
+        }
         changePlaybackRate(-kPlaybackRateStep);
         return true;
-    case Qt::Key_G:
+    }
+    case Qt::Key_G: {
         // 再生条件（速度/音量/音声強調）の全リセット ↔ 起動時デフォルト復元のトグル
+        // 実行中は修飾子の有無に関わらず消費する（↑↓ キーと同挙動）。
+        // 修飾子付き（Ctrl+G 等）はシステムショートカットと衝突するため素通しし、
+        // 冒頭コメントのシステムキー契約を守る（↑↓ キーと同型のガード）
         if (running) return true;
+        const auto mods = ke->modifiers() & kModifierMask;
+        if (mods != Qt::NoModifier) {
+            return QMainWindow::eventFilter(watched, event);
+        }
         toggleGReset();
         return true;
-    case Qt::Key_R:
+    }
+    case Qt::Key_R: {
         // 区間マーカーのみクリア（再生位置・再生状態は維持する）
         // onStop は再生位置を 0 に戻すため別実装
+        // 実行中は修飾子の有無に関わらず消費する（↑↓ キーと同挙動）。
+        // 修飾子付き（Ctrl+R 等）はシステムショートカットと衝突するため素通しし、
+        // 冒頭コメントのシステムキー契約を守る（↑↓ キーと同型のガード）
         if (running) return true;
+        const auto mods = ke->modifiers() & kModifierMask;
+        if (mods != Qt::NoModifier) {
+            return QMainWindow::eventFilter(watched, event);
+        }
         if (m_info.valid) {
             m_inSet  = false;
             m_outSet = false;
@@ -1420,6 +1451,7 @@ bool MainWindow::eventFilter(QObject* watched, QEvent* event)
             updateRangeMarkers();
         }
         return true;
+    }
     case Qt::Key_C: {
         // 音声強調（Clarity）の ON/OFF トグル。C は Clarity の頭文字（旧 N キーから直観性のため変更）
         // 実行中は修飾子の有無に関わらず消費する（↑↓ キーと同挙動）。

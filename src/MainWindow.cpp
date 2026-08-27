@@ -1345,8 +1345,13 @@ bool MainWindow::eventFilter(QObject* watched, QEvent* event)
         return QMainWindow::eventFilter(watched, event);
     }
     // 実行中（変換またはトリム）はメディア操作キーのみ無効化する。
-    // Alt+F4・Tab・Ctrl+C 等のシステムキーやアプリ全体のショートカットは default で素通しし、
-    // ウィンドウ閉鎖やフォーカス移動をブロックしない。
+    // システムキーやアプリ全体のショートカットは素通しし、ウィンドウ閉鎖やフォーカス移動をブロックしない。
+    // 素通しの経路は 2 系統ある。アプリが case を持たないキー（Alt+F4・Tab 等）は switch の
+    // default で素通しし、case を持つキーの修飾子付き入力（Ctrl+C・Ctrl+. 等）は各 case 先頭の
+    // 修飾子ガードで素通しする。switch は修飾子を含まない key() で分岐するため、
+    // Ctrl+C も case Qt::Key_C へ入り default へは到達しないためだ。
+    // ただし実行中は各 case の running ガードが修飾子ガードより先に走るため、
+    // case を持つキーは修飾子付きでも消費する（実行中のメディア操作キー無効化を優先する仕様）。
     // 「メディア操作キーの集合」は下の switch の case 列挙が唯一の定義であり、
     // 各 case 先頭の running ガード（消費のみして処理しない）で実行中無効化を実現する。
     // キー追加時は case を足せば実行中無効化も同時に効き、抑止リストとの二重管理は生じない

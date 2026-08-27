@@ -1350,6 +1350,8 @@ bool MainWindow::eventFilter(QObject* watched, QEvent* event)
     // default で素通しし、case を持つキーの修飾子付き入力（Ctrl+C・Ctrl+. 等）は各 case 先頭の
     // 修飾子ガードで素通しする。switch は修飾子を含まない key() で分岐するため、
     // Ctrl+C も case Qt::Key_C へ入り default へは到達しないためだ。
+    // 例外はアプリが割当を持つ修飾子付き入力だ。Alt+←→（フォルダ内の前後ファイル切替）は
+    // 修飾子付きでも消費する。
     // ただし実行中は各 case の running ガードが修飾子ガードより先に走るため、
     // case を持つキーは修飾子付きでも消費する（実行中のメディア操作キー無効化を優先する仕様）。
     // 「メディア操作キーの集合」は下の switch の case 列挙が唯一の定義であり、

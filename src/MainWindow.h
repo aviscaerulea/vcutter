@@ -339,7 +339,7 @@ private:
     // 実行中の操作種別。None ならアイドル
     Operation m_runningOp = Operation::None;
 
-    // probe 失敗ダイアログ表示中の loadFile 再入抑止フラグ
+    // ロード失敗ダイアログ表示中の loadFile 再入抑止フラグ（showLoadError の全経路が対象）
     // QMessageBox::critical のネストイベントループ中に D&D 等で loadFile が呼ばれても無視する
     bool m_loadInhibited = false;
 

@@ -29,7 +29,9 @@ public:
 
 public slots:
     // 所属スレッドで QAudioSink を生成・起動する
-    // moveToThread 後に QueuedConnection 経由で呼び出すこと
+    // moveToThread 後、所属スレッド上で実行すること。
+    // 実現手段は QThread::started シグナルへの接続だ。emit 元が audio thread 自身のため
+    // AutoConnection でも所属スレッド内の直接呼び出しになる
     void start();
 
     // 受信したバッファに DSP・音量を適用して sink に書き込む

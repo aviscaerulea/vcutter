@@ -58,8 +58,11 @@ public slots:
     // ApplyConfig を内部で呼ぶため audio thread からのみ実行する
     void setSpeechEnhanceEnabled(bool enabled);
 
-    // 再生速度を SoundTouch に設定する（音程を保ったまま時間圧縮 / 伸長する）
-    // QAudioBufferOutput が pitchCompensation を無視するため AudioWorker 側で時間圧縮する
+    // 再生速度を更新する（音程を保ったまま時間圧縮 / 伸長する）
+    // QAudioBufferOutput が pitchCompensation を無視するため AudioWorker 側で時間圧縮する。
+    // 本関数は値を atomic に受け取るだけで、実際の SoundTouch::setTempo は audio thread の
+    // onAudioBuffer 冒頭で適用する。そのため GUI thread から直接呼んでよい。
+    // 0 以下の値は SoundTouch の前提を破るため無視する
     void setPlaybackRate(double rate);
 
     // デフォルト出力デバイスの切替に追従して sink を作り直す

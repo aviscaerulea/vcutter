@@ -810,6 +810,10 @@ void MainWindow::loadFile(const QString& rawPath, bool centerOnMonitor)
     // probe 完了までファイル依存 UI を一旦無効化する。
     // setSource() より前に invalidate しておくことで、setSource 経由で発火し得る
     // mediaStatusChanged 等の同期コールバックでも旧 m_info / m_filePath が参照されない
+    // 保留中のシーク要求も同時に破棄する。40ms のスロットル窓内でファイルが切り替わると、
+    // 旧ファイル基準の位置が新ソースへ適用され、新ファイルが先頭から始まらないためだ
+    m_seekTimer.stop();
+    m_pendingSeekMs = -1;
     m_info = VideoInfo();
     m_filePath.clear();
     setWindowTitle(QStringLiteral("avply"));

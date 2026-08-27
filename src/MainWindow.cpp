@@ -810,6 +810,9 @@ void MainWindow::loadFile(const QString& rawPath, bool centerOnMonitor)
     // probe 完了までファイル依存 UI を一旦無効化する。
     // setSource() より前に invalidate しておくことで、setSource 経由で発火し得る
     // mediaStatusChanged 等の同期コールバックでも旧 m_info / m_filePath が参照されない
+    // 同じ理由で世代番号の加算も setSource() より前に置く。setSource が同期的に InvalidMedia を
+    // 出すと showLoadError の QMessageBox がネストイベントループを回し、その間に旧 probe の
+    // コールバックが発火し得るため、加算が後だと旧世代がガードを通過して旧パスの結果を反映してしまう
     // 保留中のシーク要求も同時に破棄する。40ms のスロットル窓内でファイルが切り替わると、
     // 旧ファイル基準の位置が新ソースへ適用され、新ファイルが先頭から始まらないためだ
     m_seekTimer.stop();
@@ -819,6 +822,9 @@ void MainWindow::loadFile(const QString& rawPath, bool centerOnMonitor)
     setWindowTitle(QStringLiteral("avply"));
     setUiEnabled(false);
 
+    // 再入検出用の世代番号を進める（m_loadGeneration のヘッダコメント参照）
+    const quint64 gen = ++m_loadGeneration;
+
     // QMediaPlayer の非同期ロードを ffprobe 実行と並行させて先頭フレーム表示を早める
     m_videoView->setSource(path);
 
@@ -827,9 +833,6 @@ void MainWindow::loadFile(const QString& rawPath, bool centerOnMonitor)
     // loadFile は全ロード経路が合流する唯一の入口のため、
     // この位置に置けば rate 適用を一様に前倒しできる
     m_videoView->setPlaybackRate(m_playbackRate);
-
-    // 再入検出用の世代番号を進める（m_loadGeneration のヘッダコメント参照）
-    const quint64 gen = ++m_loadGeneration;
 
     // 旧 probe を破棄してから新規発行する。
     // 連続 D&D などで前ファイルの probe 結果が遅れて到着し、新ファイルの状態を上書きするのを防ぐ。

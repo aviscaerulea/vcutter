@@ -196,8 +196,9 @@ void SilenceTone::openSink()
     sink->start(tone.get());
 
     // start() 失敗時はメンバへ移管せず破棄する。
-    // 移管してしまうと m_healthCheck の !m_sink 判定がすり抜けて永続的に
-    // 再生不能状態でロックインされるため、明示的に状態確認してから保持する
+    // 移管してしまうと、m_healthCheck の isSinkUnhealthy 判定が UnderrunError を健全とみなすため、
+    // start に失敗した sink が自己回復の対象から漏れて再生不能状態でロックインされ得る。
+    // ここで明示的に状態確認してから保持することで、その取りこぼしを断つ
     if (sink->error() != QAudio::NoError) {
         qDebug() << "SilenceTone: sink->start failed, error =" << sink->error();
         return;

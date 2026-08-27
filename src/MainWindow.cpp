@@ -779,9 +779,15 @@ void MainWindow::onEncoderReleaseFile(const QString& path)
 void MainWindow::showLoadError(const QString& message)
 {
     m_videoView->clear();
+    // 抑止フラグは直接 false 代入せず旧値へ戻す。
+    // 破損ファイル 1 個に対して VideoView::loadFailed 経由と ffprobe コールバック経由が
+    // 相前後して発火し得るため、外側ダイアログのネストイベントループ中に本関数が再入する。
+    // 直接 false にすると内側ダイアログを閉じた時点で外側の抑止まで解け、
+    // モーダル入力ブロックの対象外である IPC 経由のロードが通ってしまう
+    const bool prevInhibited = m_loadInhibited;
     m_loadInhibited = true;
     QMessageBox::critical(this, "エラー", message);
-    m_loadInhibited = false;
+    m_loadInhibited = prevInhibited;
 }
 
 void MainWindow::loadFile(const QString& rawPath, bool centerOnMonitor)

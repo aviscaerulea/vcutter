@@ -117,6 +117,7 @@ private:
     // ロード失敗をユーザへ通知する
     // 再生をクリアした上でダイアログを出す。表示中のネストイベントループで D&D 等から
     // loadFile が再入するのを防ぐため m_loadInhibited を立てて囲う
+    // 本関数自体の再入時は旧値を退避・復元し、内側の復帰で外側の抑止が解けないようにする
     void showLoadError(const QString& message);
 
     // 実行中の操作種別。None ならアイドル

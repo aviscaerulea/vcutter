@@ -169,7 +169,7 @@ private:
 
     // ホイール入力を修飾子に応じてシーク／音量／再生速度に振り分ける
     // VideoView と RangeSlider の両 wheelScrolled 経路で共通使用する。
-    // Ctrl 優先 → Shift → 修飾子なしシークの順。変換中はすべて抑止
+    // Ctrl 優先 → Shift → 修飾子なしシークの順。変換・トリム実行中はすべて抑止
     void handleWheelInput(bool forward, bool shift, bool ctrl);
 
     // 音量ラベルの表示を現在値で更新する

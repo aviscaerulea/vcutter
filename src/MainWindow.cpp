@@ -1384,10 +1384,20 @@ bool MainWindow::eventFilter(QObject* watched, QEvent* event)
         }
         return true;
     }
-    case Qt::Key_Space:
+    case Qt::Key_Space: {
+        // 再生 / 一時停止のトグル
+        // 実行中は修飾子の有無に関わらず消費する（↑↓ キーと同挙動）。
+        // 修飾子付き（Alt+Space のシステムメニュー、Ctrl+Space の IME 切替等）は
+        // システムショートカットと衝突するため素通しし、
+        // 冒頭コメントのシステムキー契約を守る（↑↓ キーと同型のガード）
         if (running) return true;
+        const auto mods = ke->modifiers() & kModifierMask;
+        if (mods != Qt::NoModifier) {
+            return QMainWindow::eventFilter(watched, event);
+        }
         if (m_info.duration > 0.0) m_videoView->togglePlay();
         return true;
+    }
     case Qt::Key_Up:
     case Qt::Key_Down: {
         // 音量 ±0.05

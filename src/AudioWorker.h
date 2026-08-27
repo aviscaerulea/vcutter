@@ -68,6 +68,7 @@ public slots:
     // QMediaDevices::audioOutputsChanged が本スロットへ QueuedConnection で届く。
     // 束縛中デバイスが現デフォルトと同じ場合、および sink 未所持
     // （start() 前 / teardown 後）の場合は何もしない
+    // デフォルト出力デバイス不在（現デフォルトの id が空）の場合も、移る先が無いため現 sink を維持する
     void switchToDefaultDevice();
 
     // 所属スレッドで QAudioSink を停止・破棄する

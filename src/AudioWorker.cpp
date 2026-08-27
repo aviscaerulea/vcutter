@@ -49,7 +49,7 @@ void AudioWorker::start()
     // SoundTouch を所属スレッドで生成する。
     // QAudioBufferOutput が pitchCompensation を無視するため、AudioWorker 側で
     // playback rate に応じた時間圧縮 / 伸長を行う。setTempo は onAudioBuffer 冒頭で
-    // m_pendingRate を読み取って適用する（GUI thread から DirectConnection で呼ばれても安全にするため）
+    // m_pendingRate を読み取って適用する（setPlaybackRate が GUI thread から直接呼ばれても安全にするため）
     m_stretch = std::make_unique<soundtouch::SoundTouch>();
     m_stretch->setSampleRate(static_cast<uint>(m_format.sampleRate()));
     m_stretch->setChannels(static_cast<uint>(m_format.channelCount()));

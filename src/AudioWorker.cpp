@@ -388,7 +388,9 @@ void AudioWorker::onAudioBuffer(const QAudioBuffer& buf)
                  << "underruns=" << m_statsUnderruns
                  << "pendingTail=" << m_pendingTail.size()
                  << "bytesFree=" << m_sink->bytesFree()
-                 << "tempo=" << m_stretch->getInputOutputSampleRatio();
+                 // 出力値は tempo ではなく入出力サンプル比（1/tempo）だ。
+                 // in / out の KB 比と突き合わせる診断値として出す
+                 << "ioRatio=" << m_stretch->getInputOutputSampleRatio();
         m_statsWinStart  = now;
         m_statsInBytes   = 0;
         m_statsOutBytes  = 0;

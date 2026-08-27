@@ -856,7 +856,14 @@ void MainWindow::loadFile(const QString& rawPath, bool centerOnMonitor)
 
     const QString ffprobePath = Ffmpeg::ffprobePath(m_ffmpegPath);
     m_probeProc = Ffmpeg::probeAsync(ffprobePath, path, this,
-        [this, path, centerOnMonitor](const VideoInfo& info, const FfmpegResult& result) {
+        [this, path, centerOnMonitor, gen](const VideoInfo& info, const FfmpegResult& result) {
+        // 新しいロードに追い越されていたら何もしない。
+        // 起動失敗経路（FfmpegRunner の errorOccurred）は QueuedConnection で遅延発火し、
+        // コンテキストが proc 側のため loadFile の旧 probe 破棄では止まらない。
+        // このガードは m_probeProc のクリアより前に置く。世代が古い場合の m_probeProc は
+        // 既に新 probe を指しており、クリアすると稼働中のハンドルを失う
+        if (gen != m_loadGeneration) return;
+
         // callback 返却後に FfmpegRunner 側が m_probeProc を deleteLater するため、
         // 解放済みポインタへの再アクセス（次回 loadFile 時の kill/waitForFinished 等）を
         // 避けるためポインタのみ先にクリアする

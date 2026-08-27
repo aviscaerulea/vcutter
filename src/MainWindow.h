@@ -179,7 +179,7 @@ private:
     // 動画読込済なら同フォルダ、未読込なら %USERPROFILE%
     QString openDialogStartDir() const;
 
-    // アプリケーション全体のキー入力を捕捉してシーク・再生制御に変換する
+    // アプリケーション全体のキー入力を捕捉して再生・シーク・トリム区間・ファイル切替の各操作に変換する
     bool eventFilter(QObject* watched, QEvent* event) override;
 
     // メニューから操作する設定の即時反映用ハンドラ

@@ -395,7 +395,7 @@ MainWindow::MainWindow(const QString& initialPath, QWidget* parent)
     updateSpeechEnhanceDisplay();
 
     updateMenuActionEnabled();
-    // アプリケーション全体のキー入力を捕捉してシーク・再生制御に変換する
+    // アプリケーション全体のキー入力を捕捉して再生・シーク・トリム区間・ファイル切替の各操作に変換する
     qApp->installEventFilter(this);
 
     // 下部 UI（seekRow + statusBar + 余白）の自然高を直接合算する。

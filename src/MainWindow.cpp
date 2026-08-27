@@ -215,7 +215,7 @@ MainWindow::MainWindow(const QString& initialPath, QWidget* parent)
     const QString iconBtnStyle =
         "QPushButton { border: none; padding: 0; }"
         "QPushButton:hover { background-color: rgba(255, 255, 255, 30); }";
-    // アイコン式ボタンの統一サイズ（再生・停止・【・】 すべて同じ矩形でホバーする）
+    // アイコン式ボタンの基準サイズ（再生・停止・トリムの正方形 3 ボタンへ適用し、【】は高さのみ揃える）
     // 【】テキストの見た目に揃うようコンパクトにし、アイコンも一回り小さくする
     const QSize iconBtnSize(28, 28);
     const QSize iconImgSize(18, 18);

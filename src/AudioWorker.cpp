@@ -483,8 +483,8 @@ void AudioWorker::setPlaybackRate(double rate)
 {
     // 再生速度を atomic に受け取り、実際の SoundTouch::setTempo は
     // onAudioBuffer 冒頭（audio thread 上）で適用する。
-    // この slot は VideoView から DirectConnection で GUI thread から直接呼ばれる場合があり、
-    // SoundTouch がスレッド安全でないため、ここでは触らない。
+    // この関数は VideoView から GUI thread 上で直接（C++ の関数呼び出しで）呼ばれるため、
+    // SoundTouch はスレッド安全でなく、ここでは触らない。
     // tempo=1.5 → 入力 1.5 秒分を出力 1 秒分に時間圧縮（ピッチ保持）
     // 範囲外 / 不正値は無視する（0 や負値は SoundTouch の前提を破る）
     if (rate <= 0.0) return;

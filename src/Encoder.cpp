@@ -58,7 +58,7 @@ void Encoder::encode(const EncodeParams& params)
 {
     // 既存ジョブが走行中なら新規要求を拒否しつつ呼び出し側へ通知する
     // silent return だと UI が「変換中 0%」のまま無限待機に陥るため、
-    // 必ず finished(false, ...) を emit して進捗ダイアログを閉じる経路を確保する
+    // 必ず finished(false, ...) を emit して、UI の進捗表示をリセットする経路を確保する
     if (isRunning()) {
         qWarning() << "Encoder: 既存の変換処理が完了していないため新規要求を拒否しました";
         // 受理しなかった要求の outputPath を渡すと、呼び出し側で「失敗したが出力ファイルあり」と

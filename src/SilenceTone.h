@@ -55,10 +55,11 @@ private:
     // stop() 内で stop() を呼ぶことで pending 起動も確実にキャンセルできる
     QTimer m_restartDebounce;
 
-    // openSink 失敗時の自己回復タイマ
-    // m_started=true なのに m_sink=nullptr のまま放置された状態（過渡的失敗で
-    // audioOutputsChanged が来ない／取りこぼした等）を定期的に検出し、
-    // onAudioOutputsChanged() 経由で closeSink→openSink の単一経路により sink を再生成する
+    // sink 不健全状態の自己回復タイマ
+    // m_started=true なのに sink が null、または停止・エラー状態のまま残っている状態（過渡的失敗で
+    // audioOutputsChanged が来ない／取りこぼした、移管後にデバイスが消失した等）を定期的に検出し、
+    // onAudioOutputsChanged() 経由で closeSink→openSink の単一経路により sink を再生成する。
+    // 判定条件は AudioSinkHealth.h の isSinkUnhealthy（AudioWorker と共用）だ
     QTimer m_healthCheck;
 
     double m_freq = 1000.0;

@@ -389,7 +389,7 @@ void AudioWorker::onAudioBuffer(const QAudioBuffer& buf)
                  << "pendingTail=" << m_pendingTail.size()
                  << "bytesFree=" << m_sink->bytesFree()
                  // 出力値は tempo ではなく入出力サンプル比（1/tempo）だ。
-                 // in / out の KB 比と突き合わせる診断値として出す
+                 // setTempo の適用結果を確認するための値で、tempo=1.5 なら約 0.667 になる
                  << "ioRatio=" << m_stretch->getInputOutputSampleRatio();
         m_statsWinStart  = now;
         m_statsInBytes   = 0;

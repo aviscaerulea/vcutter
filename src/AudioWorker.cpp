@@ -320,8 +320,8 @@ void AudioWorker::onAudioBuffer(const QAudioBuffer& buf)
     }
 
     // ステージ 3：SpeechEnhancer の処理済み出力を取り出して音量・sink への書き込みを行う。
-    // sink の空きを見ながら pullInterleaved でバッチ取り出しし、sink フル時は残量を
-    // pendingTail へ退避する。残りは enhancer 出力 FIFO に滞留し次回消化されるため欠落しない
+    // sink の空きを見ながら pullInterleaved でバッチ取り出しし、sink フル時と partial write 時の
+    // 未送出分を pendingTail へ退避する。残りは enhancer 出力 FIFO に滞留し次回消化されるため欠落しない
     constexpr qsizetype kPullBatchFrames = 4096;
     const qsizetype pullBatchBytes =
         kPullBatchFrames * channels * static_cast<qsizetype>(sizeof(float));
@@ -355,19 +355,15 @@ void AudioWorker::onAudioBuffer(const QAudioBuffer& buf)
         }
         const qint64 consumed = written;
 
-        // toWrite を超える残量は pre-volume のまま pendingTail に退避する
-        if (toWrite < outBytes) {
-            const char*     tailSrc   = m_workBuf.constData() + toWrite;
-            const qsizetype tailBytes = outBytes - toWrite;
-            m_pendingTail.append(tailSrc, tailBytes);
-            ++underruns;
-            break;
-        }
-        // bytesFree() 制約下で write < toWrite はまれ。さらに不足した分も pre-volume で退避する
-        if (consumed < toWrite) {
-            const char*     tailSrc   = m_workBuf.constData() + consumed;
-            const qsizetype tailBytes = toWrite - consumed;
-            m_pendingTail.append(tailSrc, tailBytes);
+        // 未送出分は実際に書けた consumed を起点に pre-volume のまま pendingTail へ退避する。
+        // 未送出分は「sink の空き不足で切り詰めた [toWrite, outBytes)」と
+        // 「partial write で書けなかった [consumed, toWrite)」の 2 種があり、両者は同時に起き得る。
+        // 起点を toWrite に置くと後者が sink にも pendingTail にも残らず破棄されるため、
+        // consumed を唯一の起点として [consumed, outBytes) をまとめて退避する
+        // （pendingTail フラッシュ側の consumed 起点処理と同じ扱いに揃える）
+        if (consumed < outBytes) {
+            m_pendingTail.append(m_workBuf.constData() + consumed,
+                                 static_cast<qsizetype>(outBytes - consumed));
             ++underruns;
             break;
         }

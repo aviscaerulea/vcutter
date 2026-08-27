@@ -136,7 +136,7 @@ void AudioWorker::onAudioBuffer(const QAudioBuffer& buf)
     // 既存セッションが AUDCLNT_E_DEVICE_INVALIDATED で無効化され sink は停止状態へ落ちる。
     // 放置すると bytesFree() が恒久 0 となり、overflow guard の 2 秒毎破棄だけが続いて
     // 次のシーク（reset）まで無音が継続する（Aiseesoft Screen Recorder の録画開始で実機再現）。
-    // SilenceTone::healthCheck と共通の isSinkUnhealthy で不健全を検知し、sink を再生成して自動復帰する。
+    // SilenceTone の m_healthCheck タイマと共通の isSinkUnhealthy で不健全を検知し、sink を再生成して自動復帰する。
     // 能動停止は teardown のみ（直後に m_sink=nullptr）のため、ここでの StoppedState は異常確定。
     // デバイス完全消失時に毎バッファ再生成が空振りし続けるのを避けるため再試行は 1 秒間隔に絞る
     const bool unhealthy = !m_sinkDev || isSinkUnhealthy(m_sink);

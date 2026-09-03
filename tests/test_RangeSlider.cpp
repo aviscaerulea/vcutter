@@ -1,6 +1,6 @@
 // RangeSlider ユニットテスト
 // 公開 setter は内部状態 getter を持たないため、シグナル発火と QSlider 継承の value() のみで検証する
-// grab() でのピクセル比較は不安定かつテスト価値が低いため不採用（敵対 M5）
+// grab() でのピクセル比較は不安定かつテスト価値が低いため不採用
 
 #include <QtTest/QtTest>
 #include <QSignalSpy>

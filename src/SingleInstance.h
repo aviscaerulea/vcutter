@@ -18,7 +18,8 @@ bool tryBecomePrimary();
 
 // 既存インスタンスへの引数転送を試みる
 // 戻り値 true：既存に転送済み、呼び出し側は exit すべき
-// 戻り値 false：既存なし、呼び出し側が primary
+// 戻り値 false：転送できなかった（既存が listen 未開始、応答なし、ack 不一致のいずれか）。
+// primary 判定は行わず、false 後の扱いは forwardWithRetry に委ねる
 // arg は空文字でも構わない（その場合は接続のみで前面化要求のシグナルになる）
 bool tryForwardAndExit(const QString& arg);
 

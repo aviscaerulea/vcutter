@@ -88,6 +88,8 @@ qt_add_executable(avply WIN32
     src/SpeechEnhancer.cpp
     src/AudioWorker.h
     src/AudioWorker.cpp
+    src/StartupTrace.h
+    src/StartupTrace.cpp
     src/icons.qrc
     src/app.rc
 )

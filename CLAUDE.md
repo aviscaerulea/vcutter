@@ -92,6 +92,14 @@ ctest は逐次実行する（`-j` 未指定）。`test_Settings` が `HKCU\Soft
 
 `windeployqt` は「VCINSTALLDIR is not set」警告を出す。この警告は無害で、DLL の配置は正常に完了する。
 
+### 起動計測
+
+環境変数 `AVPLY_STARTUP_TRACE` を空でも `0` でもない値にして起動すると、`StartupTrace` が実行ファイルと同階層の `avply_startup.log` へ里程標を追記する。里程標の一覧は `StartupTrace::mark` の呼び出し箇所が正で、代表例はプロセス生成〜main、QApplication 構築、可視化、LoadedMedia、初回映像フレーム、初回音声バッファ、ffprobe 完了だ。未設定時は `mark()` がアトミックフラグ 1 回の読み取りで抜けるため hot path に置いても実害はない。
+
+`avply.log` を使わないのは、メッセージハンドラが Warning 以上しか記録しない設計のためだ。同じ label は最初の 1 回だけ記録するため、毎バッファ・毎フレームの経路から無条件に呼べる。
+
+白フラッシュ抑制の opacity 復帰予約と `SilenceTone` の開始予約はいずれも `MainWindow` コンストラクタ内の `singleShot(0)` で、予約順は「opacity 復帰 → loadFile → validateFfmpegPath → SilenceTone」だ。ウィンドウ可視化を最優先し、GUI thread 同期の WASAPI 確立を最後に回す。
+
 ### 受け入れ可能ファイル
 
 - 動画：mp4 / mkv / mov / avi / webm

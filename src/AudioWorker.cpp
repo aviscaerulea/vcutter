@@ -1,5 +1,6 @@
 #include "AudioWorker.h"
 #include "AudioSinkHealth.h"
+#include "StartupTrace.h"
 #include <QAudioSink>
 #include <QAudioDevice>
 #include <QMediaDevices>
@@ -45,6 +46,7 @@ void AudioWorker::start()
     // QAudioSink / QIODevice の thread affinity を所属スレッドで一貫させるため、
     // コンストラクタ側では生成せず必ず本スロット経由で生成する
     createAndStartSink();
+    StartupTrace::mark("audio_sink_started");
 
     // SoundTouch を所属スレッドで生成する。
     // QAudioBufferOutput が pitchCompensation を無視するため、AudioWorker 側で
@@ -130,6 +132,7 @@ void AudioWorker::onAudioBuffer(const QAudioBuffer& buf)
 
     // ソース切替中（forceReset 後〜resumeBuffers 前）は旧ソースの pending バッファを破棄する
     if (m_suspended) return;
+    StartupTrace::mark("first_audio_buffer");
 
     // sink 死活チェック（外部要因で無効化された WASAPI セッションからの自己回復）
     // 画面録画ソフト等がシステム音声キャプチャ開始時にオーディオエンドポイントを再構成すると、

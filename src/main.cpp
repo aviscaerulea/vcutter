@@ -16,11 +16,11 @@
 #include <QMutex>
 #include <QString>
 #include <QThread>
-#include <QTimer>
 #include "Config.h"
 #include "MainWindow.h"
 #include "Settings.h"
 #include "SingleInstance.h"
+#include "StartupTrace.h"
 
 namespace {
 
@@ -143,6 +143,11 @@ int main(int argc, char* argv[])
     // main 冒頭で設定する。abort / std::terminate 経由は SEH を通らないため捕捉対象外
     SetUnhandledExceptionFilter(avplyCrashHandler);
 
+    // 起動計測（AVPLY_STARTUP_TRACE 設定時のみ有効）。Config::load より前に置き、
+    // 見出し行の「プロセス生成〜main」に DLL ロード等の main 前コストだけを載せる
+    StartupTrace::init();
+    StartupTrace::mark("main");
+
     // SetWindowsHookEx 経由のサードパーティ DLL 注入を遮断する
     // DisplayFusion 等のウィンドウフック DLL が注入されてクラッシュするケースに対処する
     PROCESS_MITIGATION_EXTENSION_POINT_DISABLE_POLICY epPolicy = {};
@@ -161,6 +166,7 @@ int main(int argc, char* argv[])
     // （Config::load() は exe ディレクトリ取得を Win32 API で行うため Qt 初期化非依存）。
     // 空文字なら Qt 自動選択へフォールバックする
     const AppConfig earlyCfg = Config::load();
+    StartupTrace::mark("config_loaded");
     if (!earlyCfg.hwDecoderPriority.isEmpty()) {
         qputenv("QT_FFMPEG_DECODING_HW_DEVICE_TYPES",
                 earlyCfg.hwDecoderPriority.toUtf8());
@@ -192,6 +198,7 @@ int main(int argc, char* argv[])
     }
 
     QApplication app(argc, argv);
+    StartupTrace::mark("qapplication_ready");
 
     // Warning 以上の Qt メッセージを avply.log に書き出すハンドラを登録する
     qInstallMessageHandler(avplyMessageHandler);
@@ -217,17 +224,11 @@ int main(int argc, char* argv[])
     // 起動経路を一本化するため preliminaryArg を流用する）
     const QString initialPath = preliminaryArg;
 
-    // 起動時の白フラッシュ抑制
-    // Windows のネイティブウィンドウ作成直後に発生する WM_ERASEBKGND による白塗りは
-    // Qt 側の背景属性では抑止しきれないため、最初の paint が終わるまでウィンドウを
-    // 透明化して視覚的に隠す。次のイベントループで不透明に戻すと、その時点では既に
-    // VideoView の暗色背景および UI が描画済みのためフラッシュは見えない
+    // 白フラッシュ抑制（透明化と復帰予約）は MainWindow コンストラクタが行う
     MainWindow win(initialPath);
-    win.setWindowOpacity(0.0);
+    StartupTrace::mark("mainwindow_ready");
     win.show();
-    QTimer::singleShot(0, &win, [&win]() {
-        win.setWindowOpacity(1.0);
-    });
+    StartupTrace::mark("shown");
 
     // 単一インスタンスが ON のときは primary として IPC サーバを起動し、
     // 後続の起動から送られてくるファイルパスを受信する

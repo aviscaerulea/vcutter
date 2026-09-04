@@ -1,5 +1,6 @@
 #include "VideoView.h"
 #include "AudioWorker.h"
+#include "StartupTrace.h"
 #include <QPalette>
 #include <QVBoxLayout>
 #include <QQuickView>
@@ -60,6 +61,9 @@ VideoView::VideoView(QWidget* parent)
         auto* sink = root->property("videoSink").value<QVideoSink*>();
         if (sink) {
             m_player->setVideoSink(sink);
+            // 起動計測用：最初の映像フレーム到達を記録する（2 回目以降は mark 側で無視）
+            connect(sink, &QVideoSink::videoFrameChanged,
+                    this, []() { StartupTrace::mark("first_video_frame"); });
         }
         // QML シグナルを C++ スロットに接続する。
         // QML 側のシグネチャと不一致になっていれば connect が失敗するため警告ログで通知する
@@ -170,6 +174,7 @@ VideoView::VideoView(QWidget* parent)
         if (m_primeFirstFrame &&
             (s == QMediaPlayer::LoadedMedia || s == QMediaPlayer::BufferedMedia)) {
             m_primeFirstFrame = false;
+            StartupTrace::mark("loaded_media");
             // hasVideo が true のときのみ QQuickView コンテナを表示する。
             // 音声のみのソースで表示すると VideoOutput に何も描画されず黒矩形が残るため、
             // 描画対象が確定したフレームでだけコンテナを可視化する。
@@ -177,6 +182,7 @@ VideoView::VideoView(QWidget* parent)
             // 残るため、明示的に隠して旧ソースの最終フレーム残留を解消する
             if (m_player->hasVideo()) {
                 m_videoContainer->show();
+                StartupTrace::mark("video_container_shown");
             }
             else {
                 m_videoContainer->hide();
@@ -191,7 +197,9 @@ VideoView::VideoView(QWidget* parent)
                 QMetaObject::invokeMethod(w, [w]() { w->resumeBuffers(); },
                                           Qt::BlockingQueuedConnection);
             }
+            StartupTrace::mark("audio_resumed");
             m_player->play();
+            StartupTrace::mark("play_called");
             return;
         }
         // ロード失敗時はフラグを落として通知する
@@ -291,6 +299,7 @@ void VideoView::setSource(const QString& filePath)
         AudioWorker* w = m_audioWorker;
         QMetaObject::invokeMethod(w, [w]() { w->forceReset(); }, Qt::BlockingQueuedConnection);
     }
+    StartupTrace::mark("forcereset_done");
     // 同一 URL 再投入時の強制再ロード
     // QMediaPlayer::setSource は同一 URL を渡すと再ロードを省略し、
     // mediaStatusChanged(LoadedMedia) が再発火しない。

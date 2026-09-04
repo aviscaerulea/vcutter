@@ -2,6 +2,7 @@
 #include "Config.h"
 #include "OutputNamer.h"
 #include "Settings.h"
+#include "StartupTrace.h"
 #include <QApplication>
 #include <QClipboard>
 #include <QVBoxLayout>
@@ -134,6 +135,7 @@ void purgeOldWaveformCache()
 MainWindow::MainWindow(const QString& initialPath, QWidget* parent)
     : QMainWindow(parent)
 {
+    StartupTrace::mark("mainwindow_ctor_begin");
     setWindowTitle("avply");
     setAcceptDrops(true);
 
@@ -144,6 +146,8 @@ MainWindow::MainWindow(const QString& initialPath, QWidget* parent)
 
     // --- 動画プレビュー（クリックで再生/停止トグル、D&D でファイル読み込み） ---
     m_videoView = new VideoView;
+    // QML コンパイル + audio thread 起動 + QMediaPlayer 生成の合計コスト
+    StartupTrace::mark("videoview_ready");
     connect(m_videoView, &VideoView::positionChanged,
             this, &MainWindow::onPlayerPositionChanged);
     connect(m_videoView, &VideoView::fileDropped,
@@ -202,6 +206,7 @@ MainWindow::MainWindow(const QString& initialPath, QWidget* parent)
     // --- シークバーホバープレビュー（MPC-HC 風） ---
     m_seekPreview    = new SeekPreview(this);
     m_thumbExtractor = new ThumbnailExtractor(this);
+    StartupTrace::mark("widgets_ready");
 
     connect(m_seekSlider, &RangeSlider::hoverMoved,
             this, &MainWindow::onSeekHoverMoved);
@@ -224,6 +229,7 @@ MainWindow::MainWindow(const QString& initialPath, QWidget* parent)
     // PNG アイコンを使用する
     m_iconPlay  = QIcon(":/icons/play.png");
     m_iconPause = QIcon(":/icons/pause.png");
+    StartupTrace::mark("icons_loaded");
     m_playPauseBtn = new QPushButton;
     m_playPauseBtn->setIcon(m_iconPlay);
     m_playPauseBtn->setIconSize(iconImgSize);
@@ -260,6 +266,7 @@ MainWindow::MainWindow(const QString& initialPath, QWidget* parent)
     QFont trimFont("Segoe UI Symbol");
     trimFont.setPixelSize(16);
     m_trimBtn->setFont(trimFont);
+    StartupTrace::mark("trim_font_set");
     m_trimBtn->setToolTip("トリム");
     connect(m_trimBtn, &QPushButton::clicked, this, &MainWindow::onTrimOrCancel);
 
@@ -320,12 +327,14 @@ MainWindow::MainWindow(const QString& initialPath, QWidget* parent)
     // --- ステータスバー：左から動画情報・出力状況、右に再生位置・再生速度・音量・音声強調 ---
     // 項目間の縦罫線を非表示にして、ラベル先頭の半角スペースのみで間隔を作る
     statusBar()->setStyleSheet("QStatusBar::item { border: none; }");
+    StartupTrace::mark("statusbar_created");
     statusBar()->addWidget(m_videoInfoLabel);
     statusBar()->addWidget(m_outputLabel, 1);
     statusBar()->addPermanentWidget(m_posLabel);
     statusBar()->addPermanentWidget(m_speedLabel);
     statusBar()->addPermanentWidget(m_volumeLabel);
     statusBar()->addPermanentWidget(m_speechEnhanceLabel);
+    StartupTrace::mark("statusbar_widgets_added");
 
     // シーク要求スロットル：先頭は即時、後続は 40ms 間隔で最新値を反映
     m_seekTimer.setSingleShot(true);
@@ -339,6 +348,7 @@ MainWindow::MainWindow(const QString& initialPath, QWidget* parent)
 
     // 設定読込
     const AppConfig cfg = Config::load();
+    StartupTrace::mark("config_loaded_mw");
     m_ffmpegPath           = cfg.ffmpegPath;
     m_seekLeftMs           = cfg.seekLeftMs;
     m_seekRightMs          = cfg.seekRightMs;
@@ -402,6 +412,7 @@ MainWindow::MainWindow(const QString& initialPath, QWidget* parent)
     // videoView は stretch=1 のためレイアウト後の実高は伸縮配分で揺れる。
     // 引き算ではなく構成要素の sizeHint を積み上げて算出する。
     ensurePolished();
+    StartupTrace::mark("polished");
     QLayout* mainLayout = centralWidget()->layout();
     Q_ASSERT(mainLayout);
     const QMargins cm = mainLayout->contentsMargins();
@@ -426,6 +437,20 @@ MainWindow::MainWindow(const QString& initialPath, QWidget* parent)
         resize(kInitialWindowW, kInitialWindowH);
     }
 
+    // 起動時の白フラッシュ抑制
+    // Windows のネイティブウィンドウ作成直後に発生する WM_ERASEBKGND による白塗りは
+    // Qt 側の背景属性では抑止しきれないため、最初の paint が終わるまでウィンドウを
+    // 透明化して視覚的に隠す。次のイベントループで不透明に戻すと、その時点では既に
+    // VideoView の暗色背景および UI が描画済みのためフラッシュは見えない。
+    // 復帰予約は後続の loadFile / validateFfmpegPath の予約より前に置く。
+    // singleShot(0) は予約順に発火するため、ここに置くことでウィンドウの可視化が
+    // loadFile の同期部分（audio thread との Blocking 同期、ffprobe のプロセス起動）を待たない
+    setWindowOpacity(0.0);
+    QTimer::singleShot(0, this, [this]() {
+        setWindowOpacity(1.0);
+        StartupTrace::mark("opacity_restored");
+    });
+
     // 初期ファイルのロードはイベントループに戻った直後に行い、show() を最速で先行させる
     // これにより、ユーザにはまずデフォルトサイズのウィンドウが表示され、続いて動画サイズへリサイズされる
     if (hasInitialPath) {
@@ -440,11 +465,20 @@ MainWindow::MainWindow(const QString& initialPath, QWidget* parent)
     // BT 機器のアイドル復帰時プチノイズ抑制用に、不可聴トーンを常時出力する
     // BT コーデックが無音区間でアイドル状態に入り、次の音声再開時にプチ音が乗る現象を防ぐ。
     // [audio].silence_tone_enabled=false で完全にスキップ可能（OS への常時音声出力を行わない）
+    // 生成と開始はイベントループへ戻った後に行う。openSink の WASAPI セッション確立は
+    // GUI thread の同期処理のため、コンストラクタ内で走らせると show() が遅れる。
+    // 予約は loadFile より後に置く。トーンは最初の音声出力（デコード完了後）より前に
+    // 鳴り始めれば十分で、ウィンドウ表示と初期ロード発行を優先する
     if (cfg.silenceToneEnabled) {
-        m_silenceTone = new SilenceTone(this);
-        m_silenceTone->setFrequency(cfg.silenceToneFreqHz);
-        m_silenceTone->setAmplitude(cfg.silenceToneAmp);
-        m_silenceTone->start();
+        const double freqHz = cfg.silenceToneFreqHz;
+        const double amp    = cfg.silenceToneAmp;
+        QTimer::singleShot(0, this, [this, freqHz, amp]() {
+            m_silenceTone = new SilenceTone(this);
+            m_silenceTone->setFrequency(freqHz);
+            m_silenceTone->setAmplitude(amp);
+            m_silenceTone->start();
+            StartupTrace::mark("silence_tone_started");
+        });
     }
 }
 
@@ -821,12 +855,14 @@ void MainWindow::loadFile(const QString& rawPath, bool centerOnMonitor)
     m_filePath.clear();
     setWindowTitle(QStringLiteral("avply"));
     setUiEnabled(false);
+    StartupTrace::mark("loadfile_begin");
 
     // 再入検出用の世代番号を進める（m_loadGeneration のヘッダコメント参照）
     const quint64 gen = ++m_loadGeneration;
 
     // QMediaPlayer の非同期ロードを ffprobe 実行と並行させて先頭フレーム表示を早める
     m_videoView->setSource(path);
+    StartupTrace::mark("setsource_done");
 
     // ソース設定直後に現在の再生速度を確定させる
     // probe 完了を待つと、LoadedMedia 到達による自動再生が先行して冒頭が等速で鳴る。
@@ -882,6 +918,7 @@ void MainWindow::loadFile(const QString& rawPath, bool centerOnMonitor)
         }
         onProbeFinished(path, info, centerOnMonitor);
     });
+    StartupTrace::mark("probe_started");
 }
 
 // フォルダ内の前後メディアファイルへ切替
@@ -924,6 +961,7 @@ void MainWindow::loadNeighborFile(int step)
 
 void MainWindow::onProbeFinished(const QString& path, const VideoInfo& info, bool centerOnMonitor)
 {
+    StartupTrace::mark("probe_finished");
     m_filePath = path;
     m_info     = info;
     m_inSet    = false;
@@ -1071,6 +1109,7 @@ void MainWindow::onProbeFinished(const QString& path, const VideoInfo& info, boo
         frame.moveCenter(geom.center());
         move(frame.topLeft());
     }
+    StartupTrace::mark("window_resized");
 }
 
 bool MainWindow::isAcceptedMedia(const QString& path)

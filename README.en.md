@@ -176,7 +176,7 @@ These are stored in the registry and kept for the next launch.
 
 The following tools are required.
 
-- Visual Studio 2022 or later Build Tools (C++ workload)
+- Visual Studio 2026 Build Tools (C++ workload)
 - CMake 3.25 or later
 - Qt 6.10.3 MSVC2022 x64
 

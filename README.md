@@ -7,7 +7,7 @@
 [![Build](https://github.com/aviscaerulea/avply/actions/workflows/release.yml/badge.svg)](https://github.com/aviscaerulea/avply/actions/workflows/release.yml)
 
 会議録画を「速く・聞きやすく・必要な所だけ」見直すためのメディアプレイヤーです。
-倍速再生と音声強調で視聴にかかる時間を削り、必要な区間だけを素早く切り出せます。
+倍速再生と音声強調で視聴にかかる時間を削れます。必要な区間だけを素早く切り出せます。
 起動が軽いため、会議録画に限らず普段の動画・音声再生にも使えます。
 
 ![avply スクリーンショット](docs/images/screenshot.png)
@@ -169,7 +169,7 @@ path = "C:/Users/yourname/scoop/apps/ffmpeg/current/bin/ffmpeg.exe"
 
 以下のツールが必要です。
 
-- Visual Studio 2022 以降の Build Tools（C++ ワークロード）
+- Visual Studio 2026 Build Tools（C++ ワークロード）
 - CMake `v3.25` 以上
 - Qt `v6.10.3` MSVC2022 x64
 

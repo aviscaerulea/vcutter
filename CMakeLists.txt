@@ -26,7 +26,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Multimedia MultimediaWidgets Network Quick)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Multimedia Network Quick)
 
 # SoundTouch: WSOLA による pitch 保持の時間圧縮 / 伸長ライブラリ（LGPL）
 # QAudioBufferOutput が pitchCompensation を無視するため、AudioWorker 側で
@@ -117,7 +117,6 @@ target_link_libraries(avply PRIVATE
     Qt6::Gui
     Qt6::Widgets
     Qt6::Multimedia
-    Qt6::MultimediaWidgets
     Qt6::Network
     Qt6::Quick
     SoundTouch

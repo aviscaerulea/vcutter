@@ -1,44 +1,31 @@
-# ビルド出力
-build/
-out/
-*.obj
-*.pdb
+# デフォルト全除外
+*
 
-# CMake 生成ファイル
-CMakeCache.txt
-CMakeFiles/
-cmake_install.cmake
-CTestTestfile.cmake
-_deps/
+# 管理対象ファイル
+!/.gitignore
+!/avply.toml
+!/build.ps1
+!/build-and-test.ps1
+!/CLAUDE.md
+!/CMakeLists.txt
+!/CMakePresets.json
+!/COPYING
+!/LICENSE
+!/README.md
+!/README.en.md
+!/Taskfile.yml
 
-# Qt MOC/RCC 生成ファイル
-*.moc
-moc_*.cpp
-qrc_*.cpp
-ui_*.h
+# 管理対象ディレクトリ
+!/.github/
+!/.github/**
+!/docs/
+!/docs/**
+!/src/
+!/src/**
+!/tests/
+!/tests/**
+!/third_party/
+!/third_party/**
 
-# Visual Studio
-*.sln
-*.vcxproj
-*.vcxproj.filters
-*.vcxproj.user
-.vs/
-*.aps
-
-# 一時・設定ファイル
-*.local.toml
-*.user
-.DS_Store
-Thumbs.db
-aqtinstall.log
-
-# ローカル環境設定（非共有）
-.claude/CLAUDE.local.md
-
-# 実行ファイル
-**/*.exe
-
-*.mp4
-*.wav
-*.mp3
-*.opus
+# 管理対象内の除外
+*.local.*

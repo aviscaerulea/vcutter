@@ -82,6 +82,7 @@ namespace {
 
 // ステータスバーラベル先頭の絵文字プレフィックス
 // 🎬 = 再生速度、🔊 = 音量。MSVC の文字リテラル経路を避けるため UTF-8 バイト列で直書きする
+// 表示ラベルには Segoe UI Emoji を明示する。設定箇所はコンストラクタのラベル生成部を参照
 const QString kSpeedPrefix     = QString::fromUtf8("  \xf0\x9f\x8e\xac ");
 const QString kVolumePrefix    = QString::fromUtf8("  \xf0\x9f\x94\x8a ");
 // ステータスバー常時表示ラベルのプレフィックス
@@ -174,11 +175,18 @@ MainWindow::MainWindow(const QString& initialPath, QWidget* parent)
     // --- 再生速度ラベル（ステータスバー右端、再生位置の右に配置） ---
     // 先頭の 🎬（カチンコ）はラベル種別の視覚的区別のため付与する
     m_speedLabel = new QLabel(kSpeedPrefix + "x1.00");
+    // 絵文字を持つフォントを明示し、初回描画時のフォールバック検索（Segoe UI に無い字形を
+    // 代替フォント群から順に探す処理）を避ける。この検索が起動時に約 300ms かかっていた（実測）。
+    // family だけ差し替え、サイズは既定フォントに揃える
+    QFont emojiFont = m_speedLabel->font();
+    emojiFont.setFamily("Segoe UI Emoji");
+    m_speedLabel->setFont(emojiFont);
 
     // --- 音量ラベル（再生速度の右に配置） ---
     // 初期値は avply.toml の [audio].volume から取得し、カーソルキー（上下）と Shift+ホイールで動的に変更する
     // 先頭の 🔊 はラベル種別の視覚的区別のため付与する
     m_volumeLabel = new QLabel(kVolumePrefix + "100%");
+    m_volumeLabel->setFont(emojiFont);
 
     // --- 音声強調ラベル（常時表示。ON/OFF） ---
     m_speechEnhanceLabel = new QLabel(kSpeechEnhancePrefix + "OFF");
